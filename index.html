@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>大家來找茬 | 互動找不同挑戰賽</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo-badge">SPOT</span>
+      <div>
+        <h1 id="game-title-display">大家來找茬</h1>
+        <span id="stage-subtitle-display" class="sub-badge">第 1 / 1 關</span>
+      </div>
+    </div>
+    <nav class="mode-switch">
+      <button id="btn-mode-play" class="nav-btn active">🎮 遊戲模式</button>
+      <button id="btn-mode-admin" class="nav-btn">🔒 後台管理</button>
+    </nav>
+  </header>
+
+  <!-- ==================== 遊戲模式 ==================== -->
+  <main id="play-view" class="container">
+    <section class="hud-bar">
+      <div class="hud-group">
+        <div class="hud-item">
+          <span class="hud-label">關卡進度</span>
+          <span id="hud-stage" class="hud-value">1 / 1</span>
+        </div>
+        <div class="hud-item">
+          <span class="hud-label">累計總分</span>
+          <span id="hud-score" class="hud-value highlight">0</span>
+        </div>
+        <div class="hud-item">
+          <span class="hud-label">本關已找出</span>
+          <span class="hud-value"><span id="hud-found">0</span> / <span id="hud-total">0</span></span>
+        </div>
+        <div class="hud-item" id="hud-timer-wrapper">
+          <span class="hud-label">剩餘時間</span>
+          <span id="hud-timer" class="hud-value">∞</span>
+        </div>
+        <div class="hud-item" id="hud-clicks-wrapper">
+          <span class="hud-label">剩餘點擊</span>
+          <span id="hud-clicks" class="hud-value">∞</span>
+        </div>
+      </div>
+      <div class="hud-actions">
+        <button id="btn-restart-stage" class="btn btn-outline">重玩本關</button>
+        <button id="btn-restart-all" class="btn btn-outline">從第 1 關開始</button>
+      </div>
+    </section>
+
+    <div id="empty-state" class="empty-card hidden">
+      <h2>尚未設定任何關卡圖片</h2>
+      <p>請進入「後台管理」上傳一張左右對比圖並圈出不同之處，或載入內建多關卡示範。</p>
+      <div class="empty-actions">
+        <button id="btn-load-demo" class="btn btn-primary">載入多關卡示範（2關）</button>
+        <button id="btn-goto-admin" class="btn btn-outline">前往後台設定</button>
+      </div>
+    </div>
+
+    <section id="game-stage" class="single-stage-container">
+      <div class="image-panel single-panel">
+        <div class="panel-tag">請點擊圖片左側或右側找出所有不同之處</div>
+        <div class="canvas-wrapper" id="play-wrapper">
+          <img id="play-img" alt="找不同對比圖" draggable="false" />
+          <svg id="play-overlay" class="overlay-svg"></svg>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- 過關 / 失敗 / 總結算彈窗 -->
+  <div id="result-modal" class="modal hidden">
+    <div class="modal-card">
+      <div id="modal-icon" class="modal-icon">🎉</div>
+      <h2 id="modal-title">本關完成！</h2>
+      <p id="modal-desc">準備好挑戰下一關了嗎？</p>
+      <div class="modal-stats">
+        <div>累計總分：<strong id="modal-final-score">0</strong></div>
+        <div>本關進度：<strong id="modal-final-found">0 / 0</strong></div>
+      </div>
+      <div class="modal-actions">
+        <button id="btn-modal-next" class="btn btn-primary">進入下一關 ➡️</button>
+        <button id="btn-modal-replay-stage" class="btn btn-outline">重玩本關</button>
+        <button id="btn-modal-replay-all" class="btn btn-primary hidden">重新挑戰全部關卡</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 後台密碼解鎖彈窗 -->
+  <div id="password-modal" class="modal hidden">
+    <div class="modal-card" style="max-width: 360px;">
+      <div class="modal-icon">🔐</div>
+      <h2>後台管理驗證</h2>
+      <p class="hint" style="margin-bottom: 14px;">請輸入管理員密碼以進入設定介面</p>
+      <div class="form-group">
+        <input type="password" id="admin-pwd-input" placeholder="請輸入後台密碼" autocomplete="off" />
+      </div>
+      <p id="pwd-error-msg" class="error-text hidden">密碼錯誤，請再試一次</p>
+      <div class="modal-actions">
+        <button id="btn-pwd-submit" class="btn btn-primary">確認解鎖</button>
+        <button id="btn-pwd-cancel" class="btn btn-outline">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 後台管理 ==================== -->
+  <main id="admin-view" class="container hidden">
+    <div class="admin-layout">
+      <!-- 左側：全域與關卡設定 -->
+      <aside class="admin-sidebar">
+        <div class="card">
+          <h3>1. 全域與密碼鎖設定</h3>
+          <div class="form-group">
+            <label for="cfg-game-title">網站主標題</label>
+            <input type="text" id="cfg-game-title" placeholder="例如：大家來找茬" />
+          </div>
+
+          <div class="form-group">
+            <label for="cfg-admin-pwd">後台管理密碼（留空代表不設密碼鎖）</label>
+            <input type="text" id="cfg-admin-pwd" placeholder="預設密碼：1234" />
+            <p class="hint">設定後，切換至後台時必須輸入正確密碼。</p>
+          </div>
+
+          <div class="form-group">
+            <label for="cfg-timer-mode">倒數計時器模式</label>
+            <select id="cfg-timer-mode">
+              <option value="per-stage">每關獨立倒數（每關重新計時）</option>
+              <option value="global">全程總時間倒數（多關卡共用總秒數）</option>
+              <option value="none">不啟用倒數計時器</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="global-time-group">
+            <label for="cfg-global-seconds">全程總倒數秒數（僅全程模式有效）</label>
+            <input type="number" id="cfg-global-seconds" min="10" max="3600" value="120" />
+          </div>
+
+          <div class="form-group">
+            <label for="cfg-wrong-behavior">點錯時的反應</label>
+            <select id="cfg-wrong-behavior">
+              <option value="feedback">顯示錯誤提示（紅叉動畫 + 扣次數）</option>
+              <option value="silent">完全沒有回應（靜默計算次數）</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 2. 多關卡列表管理 -->
+        <div class="card">
+          <div class="card-header-flex">
+            <h3>2. 多關卡列表（共 <span id="stage-count-badge">1</span> 關）</h3>
+            <button id="btn-add-stage" class="btn btn-primary btn-sm">+ 新增關卡</button>
+          </div>
+          <div id="stage-tabs-list" class="stage-tabs-list"></div>
+        </div>
+
+        <!-- 3. 儲存與部署發佈 -->
+        <div class="card">
+          <h3>3. 儲存與部署發佈</h3>
+          <button id="btn-save-local" class="btn btn-primary full-width">💾 儲存套用並進入遊戲</button>
+          <div class="divider"></div>
+          <p class="hint">匯出 <code>game-config.json</code> 覆蓋專案根目錄檔案並推送到 GitHub / Vercel，即可讓公開玩家遊玩全部關卡：</p>
+          <div class="btn-row">
+            <button id="btn-export-json" class="btn btn-outline">⬇️ 匯出 JSON</button>
+            <label class="btn btn-outline file-btn">
+              ⬆️ 匯入 JSON
+              <input type="file" id="import-json" accept=".json" hidden />
+            </label>
+          </div>
+        </div>
+      </aside>
+
+      <!-- 右側：當前選中關卡編輯區 -->
+      <section class="admin-workspace">
+        <div class="card">
+          <div class="workspace-header">
+            <div>
+              <h3>正在編輯：<span id="editing-stage-label" class="highlight-text">第 1 關</span></h3>
+              <p class="hint">只需上傳<strong>一張左右對比圖</strong>，在圖片的<strong>左半邊或右半邊</strong>按住左鍵拖曳圈出不同之處，系統會自動鏡像對應另一半邊！</p>
+            </div>
+            <div class="btn-row" style="margin-top:0; width:auto;">
+              <button id="btn-clear-spots" class="btn btn-danger-outline">清空本關標記</button>
+              <button id="btn-delete-stage" class="btn btn-danger-outline">刪除此關卡</button>
+            </div>
+          </div>
+
+          <!-- 單關卡專屬參數 -->
+          <div class="stage-settings-grid">
+            <div class="form-group">
+              <label for="stage-name">本關名稱</label>
+              <input type="text" id="stage-name" placeholder="例如：第一關：溫馨客廳" />
+            </div>
+            <div class="form-group">
+              <label for="stage-time">本關倒數秒數（每關獨立模式）</label>
+              <input type="number" id="stage-time" min="5" max="1800" value="60" />
+            </div>
+            <div class="form-group">
+              <label for="stage-clicks">本關允許點擊次數（0 為無限）</label>
+              <input type="number" id="stage-clicks" min="0" max="999" value="10" />
+            </div>
+            <div class="form-group">
+              <label for="stage-default-score">新增不同點預設得分</label>
+              <input type="number" id="stage-default-score" min="1" max="1000" value="10" />
+            </div>
+          </div>
+
+          <!-- 上傳單張對比圖與基準邊設定 -->
+          <div class="upload-single-box">
+            <div class="form-group" style="margin-bottom:0; flex:1;">
+              <label for="upload-compare-img">上傳左右對比圖片（單張圖片包含左右兩幅畫面）</label>
+              <input type="file" id="upload-compare-img" accept="image/*" />
+            </div>
+            <div class="form-group" style="margin-bottom:0; width: 220px;">
+              <label for="stage-mirror-mode">對稱映射方式</label>
+              <select id="stage-mirror-mode">
+                <option value="auto-half">自動左右半幅鏡像（推薦）</option>
+                <option value="single-only">僅單點精準判定（不鏡像）</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- 單圖圈選畫布 -->
+          <div class="image-panel single-panel" style="margin-top: 14px;">
+            <div class="panel-tag">
+              編輯畫布 — 藍色實線為您圈選的位置，虛線為系統自動對應的另一側感應區（遊玩時點擊兩側皆可得分）
+            </div>
+            <div class="canvas-wrapper editor-wrapper" id="admin-wrapper">
+              <img id="admin-img" alt="請先上傳對比圖片" draggable="false" />
+              <svg id="admin-svg" class="overlay-svg"></svg>
+            </div>
+          </div>
+
+          <!-- 已標記不同點列表 -->
+          <div class="spots-list-section">
+            <h4>本關已標記的不同點（<span id="admin-spot-count">0</span> 個）</h4>
+            <div id="spots-list" class="spots-list"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <div id="toast" class="toast hidden"></div>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "title": "大家來找茬挑戰賽",
+  "adminPassword": "1234",
+  "timerMode": "per-stage",
+  "globalTimeLimit": 120,
+  "wrongBehavior": "feedback",
+  "stages": [
+    {
+      "id": "stage_1",
+      "name": "第 1 關",
+      "timeLimit": 60,
+      "maxClicks": 10,
+      "defaultSpotScore": 10,
+      "mirrorMode": "auto-half",
+      "compareImage": "",
+      "spots": []
+    }
+  ]
+}
